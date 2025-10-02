@@ -25,7 +25,6 @@ export default function Header() {
             {user ? (
               <>
                 <Link to="/profile" className="text-gray-700 hover:text-orange-500 font-medium transition-colors">Profile</Link>
-                <Link to="/create-post" className="text-gray-700 hover:text-orange-500 font-medium transition-colors">Create Post</Link>
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
                     {user.name?.charAt(0).toUpperCase()}

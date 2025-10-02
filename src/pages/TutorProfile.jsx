@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function TutorProfile() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     // Mock tutor data based on ID
@@ -65,7 +70,9 @@ export default function TutorProfile() {
     };
 
     setTimeout(() => {
-      setTutor(tutors[id] || tutors['1']);
+      const selectedTutor = tutors[id] || tutors['1'];
+      setTutor(selectedTutor);
+      setReviews(selectedTutor.reviews || []);
       setLoading(false);
     }, 500);
   }, [id]);
@@ -152,25 +159,119 @@ export default function TutorProfile() {
 
             {/* Reviews */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold mb-4">Reviews</h2>
-              <div className="space-y-4">
-                {tutor.reviews.map((review, index) => (
-                  <div key={index} className="border-b pb-4 last:border-b-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold">{review.name}</h4>
-                      <div className="flex items-center">
-                        {[...Array(review.rating)].map((_, i) => (
-                          <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Reviews</h2>
+                {user && (
+                  <button 
+                    onClick={() => setShowReviewForm(!showReviewForm)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
+                  >
+                    Write Review
+                  </button>
+                )}
+              </div>
+
+              {/* Review Form */}
+              {showReviewForm && user && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-semibold mb-3">Write a Review</h3>
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium mb-2">Rating</label>
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setReviewData({...reviewData, rating: star})}
+                          className={`w-6 h-6 ${star <= reviewData.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                        >
+                          <svg fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
-                        ))}
-                        <span className="text-sm text-gray-500 ml-2">{review.date}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium mb-2">Comment</label>
+                    <textarea
+                      value={reviewData.comment}
+                      onChange={(e) => setReviewData({...reviewData, comment: e.target.value})}
+                      className="w-full p-3 border rounded-lg resize-none"
+                      rows="3"
+                      placeholder="Share your experience with {tutor.name}..."
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => {
+                        const newReview = {
+                          id: Date.now(),
+                          name: user.name,
+                          rating: reviewData.rating,
+                          comment: reviewData.comment,
+                          date: 'Just now',
+                          userId: user._id
+                        };
+                        setReviews([newReview, ...reviews]);
+                        setShowReviewForm(false);
+                        setReviewData({ rating: 5, comment: '' });
+                        alert('Review submitted successfully!');
+                      }}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
+                    >
+                      Submit Review
+                    </button>
+                    <button 
+                      onClick={() => setShowReviewForm(false)}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Existing Reviews */}
+              <div className="space-y-4">
+                {reviews.map((review, index) => (
+                  <div key={review.id || index} className="border-b pb-4 last:border-b-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">{review.name}</h4>
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center">
+                          {[...Array(review.rating)].map((_, i) => (
+                            <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">{review.date}</span>
+                        </div>
+                        {user && review.userId === user._id && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this review?')) {
+                                setReviews(reviews.filter(r => r.id !== review.id));
+                              }
+                            }}
+                            className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </div>
                     <p className="text-gray-700">{review.comment}</p>
                   </div>
                 ))}
               </div>
+
+              {/* Login prompt for non-logged users */}
+              {!user && (
+                <div className="text-center py-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-600 mb-2">Want to write a review?</p>
+                  <a href="/login" className="text-blue-600 hover:underline font-medium">Login to share your experience</a>
+                </div>
+              )}
             </div>
           </div>
 

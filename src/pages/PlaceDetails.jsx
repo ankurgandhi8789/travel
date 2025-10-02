@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import api from '../utils/api.js';
 
 const vehicles = [
@@ -151,7 +151,12 @@ export default function PlaceDetails() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-green-600 font-bold">₹{tutor.price}/day</span>
-                  <button className="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600">Contact</button>
+                  <Link 
+                    to={`/tutor/${tutor.id}`}
+                    className="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600 transition-colors"
+                  >
+                    Contact
+                  </Link>
                 </div>
               </div>
             </div>
