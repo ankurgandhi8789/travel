@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { createCashfreeOrder } from '../utils/cashfree';
+import { tutorsAPI } from '../utils/api.js';
 
 export default function TutorProfile() {
   const { id } = useParams();
@@ -16,70 +17,189 @@ export default function TutorProfile() {
 
 
   useEffect(() => {
-    // Mock tutor data based on ID
-    const tutors = {
-      '1': {
-        id: 1,
-        name: "Rajesh Kumar",
-        location: "Rishikesh, Uttarakhand",
-        rating: 4.9,
-        reviewCount: 150,   // ✅ changed
-        price: 2500,
-        experience: "8 years",
-        specialties: ["Spiritual Tours", "Adventure Sports", "Yoga Retreats", "Temple Visits"],
-        languages: ["Hindi", "English", "Sanskrit"],
-        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-        description: "Expert in spiritual tourism and adventure activities. Certified yoga instructor with deep knowledge of local temples and ashrams. I have been guiding travelers for over 8 years and specialize in creating personalized spiritual journeys.",
-        certifications: ["Certified Yoga Instructor", "First Aid Certified", "Licensed Tour Guide"],
-        availability: "Available 7 days a week",
-        phone: "+91 98765 43210",
-        email: "rajesh.kumar@example.com",
-        gallery: [
-          "https://images.unsplash.com/photo-1628064980478-7dd7ef17e76b?w=300&h=200&fit=crop",
-          "https://images.unsplash.com/photo-1630843015911-0a419acf6807?w=300&h=200&fit=crop",
-          "https://images.unsplash.com/photo-1602858174407-50c8c3b4e9bb?w=300&h=200&fit=crop"
-        ],
-        reviews: [
-          { name: "Sarah Johnson", rating: 5, comment: "Amazing experience! Rajesh showed us hidden gems in Rishikesh that we never would have found on our own.", date: "2 weeks ago" },
-          { name: "Michael Chen", rating: 5, comment: "Very knowledgeable about local culture and spirituality. Highly recommended!", date: "1 month ago" },
-          { name: "Emma Wilson", rating: 4, comment: "Great guide with excellent English. Made our trip memorable.", date: "2 months ago" }
-        ]
-      },
-      '2': {
-        id: 2,
-        name: "Priya Sharma",
-        location: "Haridwar, Uttarakhand",
-        rating: 4.8,
-        reviewCount: 120,   // ✅ changed
-        price: 2000,
-        experience: "6 years",
-        specialties: ["Cultural Tours", "Photography", "Local Cuisine", "Heritage Sites"],
-        languages: ["Hindi", "English", "Punjabi"],
-        image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
-        description: "Passionate about showcasing local culture and traditions. Professional photographer who captures the essence of spiritual India. I love sharing stories about our rich heritage and helping travelers understand the deeper meaning behind our customs.",
-        certifications: ["Professional Photography", "Cultural Heritage Guide", "Food Safety Certified"],
-        availability: "Available Monday to Saturday",
-        phone: "+91 98765 43211",
-        email: "priya.sharma@example.com",
-        gallery: [
-          "https://images.unsplash.com/photo-1602858174407-50c8c3b4e9bb?w=300&h=200&fit=crop",
-          "https://images.unsplash.com/photo-1603264044682-43a577c6cdb0?w=300&h=200&fit=crop",
-          "https://images.unsplash.com/photo-1627038682066-40e1a3e3d54d?w=300&h=200&fit=crop"
-        ],
-        reviews: [
-          { name: "David Brown", rating: 5, comment: "Priya's photography skills are amazing! She helped us capture beautiful memories.", date: "1 week ago" },
-          { name: "Lisa Anderson", rating: 5, comment: "Excellent cultural insights and delicious food recommendations.", date: "3 weeks ago" }
-        ]
-      }
-    };
-
-    setTimeout(() => {
-      const selectedTutor = tutors[id] || tutors['1'];
-      setTutor(selectedTutor);
-      setReviews(selectedTutor.reviews || []);
-      setLoading(false);
-    }, 500);
+    fetchTutor();
   }, [id]);
+
+  const fetchTutor = async () => {
+    try {
+      const tutorData = await tutorsAPI.getTutorById(parseInt(id));
+      if (tutorData) {
+        const enhancedTutor = {
+          ...tutorData,
+          reviewCount: tutorData.reviews,
+          location: getLocationForTutor(tutorData.id),
+          experience: getExperienceForTutor(tutorData.id),
+          description: getDescriptionForTutor(tutorData.id),
+          certifications: getCertificationsForTutor(tutorData.id),
+          availability: getAvailabilityForTutor(tutorData.id),
+          phone: getPhoneForTutor(tutorData.id),
+          email: getEmailForTutor(tutorData.id),
+          gallery: getGalleryForTutor(tutorData.id),
+          reviews: getReviewsForTutor(tutorData.id)
+        };
+        setTutor(enhancedTutor);
+        setReviews(enhancedTutor.reviews);
+      }
+    } catch (error) {
+      console.error('Error fetching tutor:', error);
+    }
+    setLoading(false);
+  };
+
+  const getLocationForTutor = (id) => {
+    const locations = {
+      1: "Rishikesh, Uttarakhand",
+      2: "Haridwar, Uttarakhand",
+      3: "Kedarnath, Uttarakhand",
+      4: "Badrinath, Uttarakhand",
+      5: "Gangotri, Uttarakhand",
+      6: "Yamunotri, Uttarakhand"
+    };
+    return locations[id] || "Uttarakhand";
+  };
+
+  const getExperienceForTutor = (id) => {
+    const experiences = { 1: "8 years", 2: "6 years", 3: "10 years", 4: "5 years", 5: "7 years", 6: "9 years" };
+    return experiences[id] || "5 years";
+  };
+
+  const getDescriptionForTutor = (id) => {
+    const descriptions = {
+      1: "Expert in spiritual tourism and adventure activities. Certified yoga instructor with deep knowledge of local temples and ashrams. I have been guiding travelers for over 8 years and specialize in creating personalized spiritual journeys.",
+      2: "Passionate about showcasing local culture and traditions. Professional photographer who captures the essence of spiritual India. I love sharing stories about our rich heritage and helping travelers understand the deeper meaning behind our customs.",
+      3: "Mountain trekking specialist with extensive experience in high-altitude expeditions. Safety-certified guide who has led hundreds of successful treks to Kedarnath and surrounding peaks.",
+      4: "Local culture enthusiast specializing in traditional handicrafts and village tourism. Expert in Kumaoni traditions and local folklore with deep community connections.",
+      5: "Wildlife and nature photography expert with comprehensive knowledge of Uttarakhand's flora and fauna. Specialized in eco-tourism and sustainable travel practices.",
+      6: "Certified yoga and meditation instructor with Sanskrit knowledge. Specializes in spiritual retreats and ancient Vedic practices in authentic ashram settings."
+    };
+    return descriptions[id] || "Experienced local guide with extensive knowledge of the region.";
+  };
+
+  const getCertificationsForTutor = (id) => {
+    const certifications = {
+      1: ["Certified Yoga Instructor", "First Aid Certified", "Licensed Tour Guide"],
+      2: ["Professional Photography", "Cultural Heritage Guide", "Food Safety Certified"],
+      3: ["Mountain Guide Certification", "Wilderness First Aid", "High Altitude Training"],
+      4: ["Cultural Heritage Specialist", "Handicraft Expert", "Community Tourism Guide"],
+      5: ["Wildlife Photography", "Nature Guide Certification", "Eco-Tourism Specialist"],
+      6: ["Yoga Alliance Certified", "Meditation Teacher", "Sanskrit Scholar"]
+    };
+    return certifications[id] || ["Licensed Tour Guide", "First Aid Certified"];
+  };
+
+  const getAvailabilityForTutor = (id) => {
+    const availability = {
+      1: "Available 7 days a week",
+      2: "Available Monday to Saturday",
+      3: "Available April to November",
+      4: "Available year-round",
+      5: "Available March to June, September to November",
+      6: "Available 7 days a week"
+    };
+    return availability[id] || "Available on request";
+  };
+
+  const getPhoneForTutor = (id) => {
+    const phones = {
+      1: "+91 98765 43210",
+      2: "+91 98765 43211",
+      3: "+91 98765 43212",
+      4: "+91 98765 43213",
+      5: "+91 98765 43214",
+      6: "+91 98765 43215"
+    };
+    return phones[id] || "+91 98765 43200";
+  };
+
+  const getEmailForTutor = (id) => {
+    const emails = {
+      1: "rajesh.kumar@example.com",
+      2: "priya.sharma@example.com",
+      3: "amit.singh@example.com",
+      4: "sunita.devi@example.com",
+      5: "vikram.thapa@example.com",
+      6: "meera.joshi@example.com"
+    };
+    return emails[id] || "tutor@example.com";
+  };
+
+  const getGalleryForTutor = (id) => {
+    const galleries = {
+      1: [
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/79fc4eb7a1dd60ff.jpeg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/b91c8b04ace273b7e298eb6f9e1b98a5e3e9e42e9a2e000473e686ec4db0f8cd.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/02ab812e109e9dafaf70bebdc6b6c42993ee383ab380361c4a27b14ae9d4dae5.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/9a0fca45a8bc3a101e9d362ac70dd32160cbee91cf777b550a99104df892a962.jpg"
+      ],
+      2: [
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/64b4db90ce127.png",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/79fc4eb7a1dd60ff.jpeg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/b91c8b04ace273b7e298eb6f9e1b98a5e3e9e42e9a2e000473e686ec4db0f8cd.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/2dfb5c298fc386fdcbef903b48e24a9c70a603a2af7cb352ff2ba521078134e4.jpg"
+      ],
+      3: [
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/64b4db90ce127.png",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/1777f2ab7a4a57e6.jpeg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/02ab812e109e9dafaf70bebdc6b6c42993ee383ab380361c4a27b14ae9d4dae5.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/2dfb5c298fc386fdcbef903b48e24a9c70a603a2af7cb352ff2ba521078134e4.jpg"
+      ],
+      4: [
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/b91c8b04ace273b7e298eb6f9e1b98a5e3e9e42e9a2e000473e686ec4db0f8cd.jpg",
+        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/9a0fca45a8bc3a101e9d362ac70dd32160cbee91cf777b550a99104df892a962.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/2dfb5c298fc386fdcbef903b48e24a9c70a603a2af7cb352ff2ba521078134e4.jpg"
+      ],
+      5: [
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/64b4db90ce127.png",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/1777f2ab7a4a57e6.jpeg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/02ab812e109e9dafaf70bebdc6b6c42993ee383ab380361c4a27b14ae9d4dae5.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/9a0fca45a8bc3a101e9d362ac70dd32160cbee91cf777b550a99104df892a962.jpg"
+      ],
+      6: [
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/b91c8b04ace273b7e298eb6f9e1b98a5e3e9e42e9a2e000473e686ec4db0f8cd.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/1777f2ab7a4a57e6.jpeg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/9a0fca45a8bc3a101e9d362ac70dd32160cbee91cf777b550a99104df892a962.jpg",
+        "https://cdn.getyourguide.com/image/format=auto,fit=crop,gravity=auto,quality=60,width=270,height=180,dpr=2/tour_img/79fc4eb7a1dd60ff.jpeg"
+      ]
+    };
+    return galleries[id] || ["https://images.unsplash.com/photo-1628064980478-7dd7ef17e76b?w=300&h=200&fit=crop"];
+  };
+
+  const getReviewsForTutor = (id) => {
+    const reviews = {
+      1: [
+        { id: 1, name: "Sarah Johnson", rating: 5, comment: "Amazing experience! Rajesh showed us hidden gems in Rishikesh that we never would have found on our own.", date: "2 weeks ago", userId: "user1" },
+        { id: 2, name: "Michael Chen", rating: 5, comment: "Very knowledgeable about local culture and spirituality. Highly recommended!", date: "1 month ago", userId: "user2" },
+        { id: 3, name: "Emma Wilson", rating: 4, comment: "Great guide with excellent English. Made our trip memorable.", date: "2 months ago", userId: "user3" }
+      ],
+      2: [
+        { id: 4, name: "David Brown", rating: 5, comment: "Priya's photography skills are amazing! She helped us capture beautiful memories.", date: "1 week ago", userId: "user4" },
+        { id: 5, name: "Lisa Anderson", rating: 5, comment: "Excellent cultural insights and delicious food recommendations.", date: "3 weeks ago", userId: "user5" },
+        { id: 6, name: "Robert Taylor", rating: 5, comment: "Professional photographer who knows all the best spots. Highly recommended!", date: "1 month ago", userId: "user6" }
+      ],
+      3: [
+        { id: 7, name: "Jennifer White", rating: 5, comment: "Amit is an excellent trekking guide. Very safety-conscious and knowledgeable about mountain routes.", date: "1 week ago", userId: "user7" },
+        { id: 8, name: "Mark Davis", rating: 5, comment: "Best mountain guide in Uttarakhand! Made our Kedarnath trek safe and memorable.", date: "2 weeks ago", userId: "user8" },
+        { id: 9, name: "Anna Martinez", rating: 4, comment: "Great experience with professional guidance throughout the trek.", date: "1 month ago", userId: "user9" }
+      ],
+      4: [
+        { id: 10, name: "James Wilson", rating: 5, comment: "Sunita showed us authentic village life and traditional crafts. Wonderful cultural experience!", date: "1 week ago", userId: "user10" },
+        { id: 11, name: "Maria Garcia", rating: 5, comment: "Amazing insights into local traditions and handicrafts. Very knowledgeable guide.", date: "3 weeks ago", userId: "user11" },
+        { id: 12, name: "Thomas Brown", rating: 4, comment: "Great cultural tour with authentic local experiences.", date: "1 month ago", userId: "user12" }
+      ],
+      5: [
+        { id: 13, name: "Linda Johnson", rating: 5, comment: "Vikram's wildlife knowledge is incredible! Saw amazing birds and animals with his guidance.", date: "2 weeks ago", userId: "user13" },
+        { id: 14, name: "Paul Anderson", rating: 5, comment: "Best nature guide for wildlife photography. Knows all the secret spots!", date: "1 month ago", userId: "user14" },
+        { id: 15, name: "Sophie Miller", rating: 5, comment: "Excellent eco-tourism experience with professional wildlife guidance.", date: "2 months ago", userId: "user15" }
+      ],
+      6: [
+        { id: 16, name: "Rachel Green", rating: 5, comment: "Meera's yoga sessions were transformative! Perfect spiritual retreat experience.", date: "1 week ago", userId: "user16" },
+        { id: 17, name: "Daniel Lee", rating: 5, comment: "Authentic yoga and meditation teacher with deep spiritual knowledge.", date: "2 weeks ago", userId: "user17" },
+        { id: 18, name: "Karen Smith", rating: 5, comment: "Best yoga retreat guide! Meera creates a perfect spiritual atmosphere.", date: "1 month ago", userId: "user18" }
+      ]
+    };
+    return reviews[id] || [];
+  };
 
   const handlePayment = async () => {
     if (!user) {
@@ -296,7 +416,7 @@ export default function TutorProfile() {
                           rating: reviewData.rating,
                           comment: reviewData.comment,
                           date: 'Just now',
-                          userId: user._id
+                          userId: user._id || user.id
                         };
                         setReviews([newReview, ...reviews]);
                         setShowReviewForm(false);
@@ -332,7 +452,7 @@ export default function TutorProfile() {
                           ))}
                           <span className="text-sm text-gray-500 ml-2">{review.date}</span>
                         </div>
-                        {user && review.userId === user._id && (
+                        {user && (review.userId === user._id || review.userId === user.id) && (
                           <button
                             onClick={() => {
                               if (window.confirm('Are you sure you want to delete this review?')) {

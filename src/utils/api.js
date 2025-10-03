@@ -1,120 +1,132 @@
 import axios from 'axios';
 
-// Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:5000';
-
-// Add request interceptor to include auth token
-axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+// Spiritual destinations data from seedData.js
+const spiritualPlaces = [
+  {
+    name: "Kedarnath Temple",
+    description: "One of the twelve Jyotirlingas of Lord Shiva, Kedarnath is nestled in the majestic Himalayas and is a sacred pilgrimage site.",
+    price: 5000,
+    offer: 10,
+    discountedPrice: 4500,
+    image: "https://wallpapers.com/images/hd/kedarnath-temple-banners-4k-9pd6c84fjldyenjg.jpg",
+    location: "Kedarnath, Uttarakhand",
+    duration: "5 days"
   },
-  (error) => {
-    return Promise.reject(error);
+  {
+    name: "Badrinath Temple",
+    description: "Dedicated to Lord Vishnu, Badrinath Temple is one of the Char Dham shrines and a must-visit for spiritual seekers.",
+    price: 4800,
+    offer: 15,
+    discountedPrice: 4080,
+    image: "https://www.bing.com/th/id/OIP.V5Ql-mfZWSPQkSOPSRnuXgHaFj?w=264&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Badrinath, Uttarakhand",
+    duration: "4 days"
+  },
+  {
+    name: "Gangotri Temple",
+    description: "Located on the banks of River Bhagirathi, Gangotri Temple is dedicated to Goddess Ganga, marking the origin of the holy river.",
+    price: 4000,
+    offer: 20,
+    discountedPrice: 3200,
+    image: "https://www.bing.com/th/id/OIP.HJDsUXouaWEfm0AgF7cmewHaE8?w=254&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Gangotri, Uttarakhand",
+    duration: "3 days"
+  },
+  {
+    name: "Yamunotri Temple",
+    description: "The source of the sacred Yamuna River, this temple is surrounded by breathtaking mountains and glaciers.",
+    price: 3800,
+    offer: 12,
+    discountedPrice: 3344,
+    image: "https://www.bing.com/th/id/OIP.5NBQASLQKnS30F-DRPtOWQHaEo?w=248&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Yamunotri, Uttarakhand",
+    duration: "3 days"
+  },
+  {
+    name: "Har Ki Pauri, Haridwar",
+    description: "A famous ghat on the banks of the Ganga in Haridwar, known for its Ganga Aarti and spiritual atmosphere.",
+    price: 3000,
+    offer: 25,
+    discountedPrice: 2250,
+    image: "https://www.bing.com/th/id/OIP.iMKUtZLxjfY2SAlFSaXdswHaEK?w=246&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Haridwar, Uttarakhand",
+    duration: "2 days"
+  },
+  {
+    name: "Rishikesh Ashrams & Temples",
+    description: "The yoga capital of the world, Rishikesh offers spiritual ashrams, temples, and the iconic Laxman Jhula bridge.",
+    price: 3200,
+    offer: 18,
+    discountedPrice: 2624,
+    image: "https://tse2.mm.bing.net/th/id/OIP.JQxvEV8azy9Hk9nXRpoSpAHaFj?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+    location: "Rishikesh, Uttarakhand",
+    duration: "3 days"
+  },
+  {
+    name: "Tungnath Temple",
+    description: "The highest Shiva temple in the world, Tungnath is part of the Panch Kedar and offers mesmerizing Himalayan views.",
+    price: 4500,
+    offer: 15,
+    discountedPrice: 3825,
+    image: "https://www.bing.com/th/id/OIP.kqZ1XeBmGBQUwCnnH8j8BQHaFj?w=246&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Rudraprayag, Uttarakhand",
+    duration: "3 days"
+  },
+  {
+    name: "Hemkund Sahib",
+    description: "A revered Sikh pilgrimage site, Hemkund Sahib is situated at 15,200 ft surrounded by glacial lakes and scenic beauty.",
+    price: 5500,
+    offer: 10,
+    discountedPrice: 4950,
+    image: "https://www.bing.com/th/id/OIP.2ulvBCDCjpac2SD_kt_e5QHaE8?w=251&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Chamoli, Uttarakhand",
+    duration: "4 days"
+  },
+  {
+    name: "Neelkanth Mahadev Temple",
+    description: "Dedicated to Lord Shiva, this temple is surrounded by dense forests and located near Rishikesh.",
+    price: 2800,
+    offer: 15,
+    discountedPrice: 2380,
+    image: "https://www.bing.com/th/id/OIP.SccTCEDbv4qefi3pbryC4gHaFj?w=281&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Rishikesh, Uttarakhand",
+    duration: "2 days"
+  },
+  {
+    name: "Jageshwar Dham",
+    description: "A cluster of over 100 ancient Hindu temples dedicated to Lord Shiva, showcasing Nagara style architecture.",
+    price: 3700,
+    offer: 10,
+    discountedPrice: 3330,
+    image: "https://www.bing.com/th/id/OIP.g9XQ2PHMdoLYj8gaaXML8gHaE8?w=247&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2",
+    location: "Almora, Uttarakhand",
+    duration: "3 days"
   }
-);
-
-// Add response interceptor to handle auth errors
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+];
 
 // Places API functions
 export const placesAPI = {
-  // Get comprehensive places data
   async getPopularPlaces() {
     try {
-      const response = await axios.get('https://jsonplaceholder.typicode.com/posts?_limit=50');
-      const posts = response.data;
-      
-      const allDestinations = [
-        { name: 'Eiffel Tower', location: 'Paris, France', state: 'Europe', category: 'cultural', image: 'https://picsum.photos/400/300?random=1' },
-        { name: 'Great Wall', location: 'Beijing, China', state: 'Asia', category: 'historical', image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&h=300&fit=crop' },
-        { name: 'Statue of Liberty', location: 'New York, USA', state: 'New York', category: 'cultural', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&h=300&fit=crop' },
-        { name: 'Big Ben', location: 'London, UK', state: 'Europe', category: 'cultural', image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&h=300&fit=crop' },
-        { name: 'Taj Mahal', location: 'Agra, India', state: 'Uttar Pradesh', category: 'historical', image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400&h=300&fit=crop' },
-        { name: 'Golden Gate Bridge', location: 'San Francisco, USA', state: 'California', category: 'adventure', image: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop' },
-        { name: 'Grand Canyon', location: 'Arizona, USA', state: 'Arizona', category: 'nature', image: 'https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=400&h=300&fit=crop' },
-        { name: 'Yellowstone Park', location: 'Wyoming, USA', state: 'Wyoming', category: 'nature', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop' },
-        { name: 'Miami Beach', location: 'Miami, USA', state: 'Florida', category: 'nature', image: 'https://picsum.photos/400/300?random=9' },
-        { name: 'Las Vegas Strip', location: 'Las Vegas, USA', state: 'Nevada', category: 'adventure', image: 'https://picsum.photos/400/300?random=10' },
-        { name: 'Hollywood Sign', location: 'Los Angeles, USA', state: 'California', category: 'cultural', image: 'https://picsum.photos/400/300?random=11' },
-        { name: 'Space Needle', location: 'Seattle, USA', state: 'Washington', category: 'cultural', image: 'https://picsum.photos/400/300?random=12' },
-        { name: 'Mount Rushmore', location: 'South Dakota, USA', state: 'South Dakota', category: 'historical', image: 'https://picsum.photos/400/300?random=13' },
-        { name: 'Niagara Falls', location: 'New York, USA', state: 'New York', category: 'nature', image: 'https://picsum.photos/400/300?random=14' },
-        { name: 'French Quarter', location: 'New Orleans, USA', state: 'Louisiana', category: 'cultural', image: 'https://picsum.photos/400/300?random=15' },
-        { name: 'Colosseum', location: 'Rome, Italy', state: 'Europe', category: 'historical', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&h=300&fit=crop' },
-        { name: 'Burj Khalifa', location: 'Dubai, UAE', state: 'Middle East', category: 'adventure', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=300&fit=crop' },
-        { name: 'Santorini', location: 'Greece', state: 'Europe', category: 'nature', image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=300&fit=crop' },
-        { name: 'Mount Fuji', location: 'Tokyo, Japan', state: 'Asia', category: 'nature', image: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&h=300&fit=crop' },
-        { name: 'Maldives Resort', location: 'Maldives', state: 'Indian Ocean', category: 'nature', image: 'https://picsum.photos/400/300?random=20' },
-        { name: 'Sagrada Familia', location: 'Barcelona, Spain', state: 'Europe', category: 'cultural', image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&h=300&fit=crop' },
-        { name: 'Sydney Opera House', location: 'Sydney, Australia', state: 'Oceania', category: 'cultural', image: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=400&h=300&fit=crop' },
-        { name: 'Hagia Sophia', location: 'Istanbul, Turkey', state: 'Europe/Asia', category: 'historical', image: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=400&h=300&fit=crop' },
-        { name: 'Machu Picchu', location: 'Cusco, Peru', state: 'South America', category: 'historical', image: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=400&h=300&fit=crop' },
-        { name: 'Prague Castle', location: 'Prague, Czech Republic', state: 'Europe', category: 'historical', image: 'https://images.unsplash.com/photo-1541849546-216549ae216d?w=400&h=300&fit=crop' },
-        { name: 'Neuschwanstein Castle', location: 'Bavaria, Germany', state: 'Europe', category: 'historical', image: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=400&h=300&fit=crop' },
-        { name: 'Pyramids of Giza', location: 'Cairo, Egypt', state: 'Africa', category: 'historical', image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=400&h=300&fit=crop' },
-        { name: 'Petra', location: 'Jordan', state: 'Middle East', category: 'historical', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop' },
-        { name: 'Times Square', location: 'New York, USA', state: 'New York', category: 'adventure', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&h=300&fit=crop' },
-        { name: 'Alamo', location: 'San Antonio, USA', state: 'Texas', category: 'historical', image: 'https://picsum.photos/400/300?random=30' },
-        { name: 'Gateway Arch', location: 'St. Louis, USA', state: 'Missouri', category: 'cultural', image: 'https://picsum.photos/400/300?random=31' },
-        { name: 'Liberty Bell', location: 'Philadelphia, USA', state: 'Pennsylvania', category: 'historical', image: 'https://picsum.photos/400/300?random=32' },
-        { name: 'Alcatraz Island', location: 'San Francisco, USA', state: 'California', category: 'historical', image: 'https://picsum.photos/400/300?random=33' },
-        { name: 'Graceland', location: 'Memphis, USA', state: 'Tennessee', category: 'cultural', image: 'https://picsum.photos/400/300?random=34' },
-        { name: 'Kennedy Space Center', location: 'Florida, USA', state: 'Florida', category: 'adventure', image: 'https://picsum.photos/400/300?random=35' },
-        { name: 'Mammoth Cave', location: 'Kentucky, USA', state: 'Kentucky', category: 'nature', image: 'https://picsum.photos/400/300?random=36' },
-        { name: 'Crater Lake', location: 'Oregon, USA', state: 'Oregon', category: 'nature', image: 'https://picsum.photos/400/300?random=37' },
-        { name: 'Denali National Park', location: 'Alaska, USA', state: 'Alaska', category: 'nature', image: 'https://picsum.photos/400/300?random=38' },
-        { name: 'Pearl Harbor', location: 'Hawaii, USA', state: 'Hawaii', category: 'historical', image: 'https://picsum.photos/400/300?random=39' },
-        { name: 'Antelope Canyon', location: 'Arizona, USA', state: 'Arizona', category: 'nature', image: 'https://picsum.photos/400/300?random=40' },
-        { name: 'Bryce Canyon', location: 'Utah, USA', state: 'Utah', category: 'nature', image: 'https://picsum.photos/400/300?random=41' },
-        { name: 'Arches National Park', location: 'Utah, USA', state: 'Utah', category: 'nature', image: 'https://picsum.photos/400/300?random=42' },
-        { name: 'Zion National Park', location: 'Utah, USA', state: 'Utah', category: 'nature', image: 'https://picsum.photos/400/300?random=43' },
-        { name: 'Yosemite Valley', location: 'California, USA', state: 'California', category: 'nature', image: 'https://picsum.photos/400/300?random=44' },
-        { name: 'Death Valley', location: 'California, USA', state: 'California', category: 'nature', image: 'https://picsum.photos/400/300?random=45' },
-        { name: 'Glacier National Park', location: 'Montana, USA', state: 'Montana', category: 'nature', image: 'https://picsum.photos/400/300?random=46' },
-        { name: 'Great Smoky Mountains', location: 'Tennessee, USA', state: 'Tennessee', category: 'nature', image: 'https://picsum.photos/400/300?random=47' },
-        { name: 'Acadia National Park', location: 'Maine, USA', state: 'Maine', category: 'nature', image: 'https://picsum.photos/400/300?random=48' },
-        { name: 'Everglades', location: 'Florida, USA', state: 'Florida', category: 'nature', image: 'https://picsum.photos/400/300?random=49' },
-        { name: 'Rocky Mountain Park', location: 'Colorado, USA', state: 'Colorado', category: 'nature', image: 'https://picsum.photos/400/300?random=50' },
-        { name: 'Olympic National Park', location: 'Washington, USA', state: 'Washington', category: 'nature', image: 'https://picsum.photos/400/300?random=51' }
-      ];
-      
-      return posts.slice(0, allDestinations.length).map((post, index) => {
-        const destination = allDestinations[index] || { name: `Destination ${index + 1}`, location: 'Unknown', state: 'Unknown', image: 'https://picsum.photos/400/300?random=1' };
-        
-        return {
-          _id: post.id.toString(),
-          name: destination.name,
-          location: destination.location,
-          state: destination.state,
-          description: `Discover the amazing ${destination.name} in ${destination.location}. Experience breathtaking views, rich culture, and unforgettable adventures at this world-renowned destination.`,
-          image: destination.image,
-          price: Math.floor(Math.random() * 50000) + 20000,
-          discountedPrice: Math.floor(Math.random() * 40000) + 15000,
-          duration: `${Math.floor(Math.random() * 8) + 3} days`,
-          category: destination.category,
-          rating: ((post.id % 20) / 10 + 3.5).toFixed(1)
-        };
-      });
+      return spiritualPlaces.map((place, index) => ({
+        _id: (index + 1).toString(),
+        name: place.name,
+        location: place.location,
+        state: 'Uttarakhand',
+        description: place.description,
+        image: place.image,
+        price: place.price,
+        discountedPrice: place.discountedPrice,
+        duration: place.duration,
+        category: 'spiritual',
+        rating: (4.5 + Math.random() * 0.5).toFixed(1),
+        offer: place.offer
+      }));
     } catch (error) {
       console.error('Error fetching places:', error);
       return [];
     }
   },
-  
-
 
   // Search places by query with comprehensive filtering
   async searchPlaces(query) {
@@ -129,6 +141,35 @@ export const placesAPI = {
       place.state.toLowerCase().includes(query.toLowerCase()) ||
       place.description.toLowerCase().includes(query.toLowerCase()) ||
       place.category.toLowerCase().includes(query.toLowerCase())
+    );
+  }
+};
+
+// Tutors API functions
+export const tutorsAPI = {
+  async getAllTutors() {
+    const tutors = [
+      { id: 1, name: "Rajesh Kumar", rating: 4.9, reviews: 150, price: 2500, specialties: ["Spiritual Tours", "Adventure"], languages: ["Hindi", "English"], image: "https://th.bing.com/th/id/OIP.233gir0jKdEoHviypGoUowHaHa?w=176&h=180&c=7&r=0&o=7&cb=12&dpr=1.3&pid=1.7&rm=3" },
+      { id: 2, name: "Priya Sharma", rating: 4.8, reviews: 120, price: 2000, specialties: ["Cultural Tours", "Photography"], languages: ["Hindi", "English"], image: "https://www.bing.com/th/id/OIP.jSQ_Bi0_yo7oJrEq3D6FlQHaJ4?w=160&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2" },
+      { id: 3, name: "Amit Singh", rating: 4.9, reviews: 95, price: 3000, specialties: ["Trekking", "Mountain Safety"], languages: ["Hindi", "Garhwali"], image: "https://www.bing.com/th/id/OIP.xC0kF1_VxNLyLrBA1TSwOAHaHa?w=185&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2" },
+      { id: 4, name: "Sunita Devi", rating: 4.7, reviews: 80, price: 1800, specialties: ["Local Culture", "Handicrafts"], languages: ["Hindi", "Kumaoni"], image: "https://th.bing.com/th/id/OIP.GzxZDpqHBkPrTKBNZTafUgHaHa?w=156&h=180&c=7&r=0&o=7&cb=12&dpr=1.3&pid=1.7&rm=3" },
+      { id: 5, name: "Vikram Thapa", rating: 4.8, reviews: 110, price: 2800, specialties: ["Wildlife Tours", "Nature Photography"], languages: ["Hindi", "English", "Nepali"], image: "https://th.bing.com/th/id/OIP.QkU2zV53i99NTHvdQX1MPAHaHa?w=175&h=180&c=7&r=0&o=7&cb=12&dpr=1.3&pid=1.7&rm=3" },
+      { id: 6, name: "Meera Joshi", rating: 4.9, reviews: 140, price: 2200, specialties: ["Yoga Retreats", "Meditation"], languages: ["Hindi", "English", "Sanskrit"], image: "https://www.bing.com/th/id/OIP.gvaKVQKTcDL6p_b7uTkzsAHaIC?w=163&h=211&c=8&rs=1&qlt=90&o=6&cb=12&dpr=1.3&pid=3.1&rm=2" }
+    ];
+    return tutors;
+  },
+
+  async getTutorById(id) {
+    const tutors = await this.getAllTutors();
+    return tutors.find(tutor => tutor.id === parseInt(id));
+  },
+
+  async getTutorsByLocation(location) {
+    const tutors = await this.getAllTutors();
+    return tutors.filter(tutor => 
+      tutor.specialties.some(specialty => 
+        specialty.toLowerCase().includes(location.toLowerCase())
+      )
     );
   }
 };

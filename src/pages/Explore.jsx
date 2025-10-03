@@ -32,9 +32,8 @@ export default function Explore() {
       setFilteredPlaces(placesData);
     } catch (error) {
       console.error('Error fetching places:', error);
-      const fallbackPlaces = placesAPI.getFallbackPlaces();
-      setPlaces(fallbackPlaces);
-      setFilteredPlaces(fallbackPlaces);
+      setPlaces([]);
+      setFilteredPlaces([]);
     }
     setLoading(false);
   };
@@ -96,6 +95,7 @@ export default function Explore() {
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
               <option value="all">All Categories</option>
+              <option value="spiritual">Spiritual</option>
               <option value="cultural">Cultural</option>
               <option value="adventure">Adventure</option>
               <option value="historical">Historical</option>
@@ -135,10 +135,7 @@ export default function Explore() {
                   </div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-gray-600">{place.duration}</span>
-                    <div className="text-right">
-                      <span className="text-lg font-bold text-green-600">₹{place.discountedPrice}</span>
-                      <span className="text-sm text-gray-500 line-through ml-1">₹{place.price}</span>
-                    </div>
+                    
                   </div>
                   <Link 
                     to={`/place/${place._id}`} 

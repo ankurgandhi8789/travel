@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { tutorsAPI } from '../utils/api.js';
 
 export default function Tutors() {
   const [searchParams] = useSearchParams();
@@ -9,62 +10,60 @@ export default function Tutors() {
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
 
   useEffect(() => {
-    // Mock tutors data
-    setTutors([
-      {
-        id: 1,
-        name: "Rajesh Kumar",
-        location: "Rishikesh, Uttarakhand",
-        rating: 4.9,
-        reviews: 150,
-        price: 2500,
-        specialties: ["Spiritual Tours", "Adventure Sports", "Yoga Retreats"],
-        languages: ["Hindi", "English", "Sanskrit"],
-        experience: "8 years",
-        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
-        description: "Expert in spiritual tourism and adventure activities. Certified yoga instructor with deep knowledge of local temples and ashrams."
-      },
-      {
-        id: 2,
-        name: "Priya Sharma",
-        location: "Haridwar, Uttarakhand",
-        rating: 4.8,
-        reviews: 120,
-        price: 2000,
-        specialties: ["Cultural Tours", "Photography", "Local Cuisine"],
-        languages: ["Hindi", "English", "Punjabi"],
-        experience: "6 years",
-        image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face",
-        description: "Passionate about showcasing local culture and traditions. Professional photographer who captures the essence of spiritual India."
-      },
-      {
-        id: 3,
-        name: "Amit Singh",
-        location: "Kedarnath, Uttarakhand",
-        rating: 4.9,
-        reviews: 95,
-        price: 3000,
-        specialties: ["Trekking", "Pilgrimage Tours", "Mountain Safety"],
-        languages: ["Hindi", "English", "Garhwali"],
-        experience: "10 years",
-        image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
-        description: "Mountain guide with extensive experience in high-altitude trekking and pilgrimage routes. Safety certified and first-aid trained."
-      },
-      {
-        id: 4,
-        name: "Sunita Devi",
-        location: "Badrinath, Uttarakhand",
-        rating: 4.7,
-        reviews: 80,
-        price: 2200,
-        specialties: ["Temple Tours", "Local Crafts", "Ayurveda"],
-        languages: ["Hindi", "English", "Kumaoni"],
-        experience: "5 years",
-        image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
-        description: "Local artisan and temple guide with deep knowledge of Ayurvedic practices and traditional crafts of the region."
-      }
-    ]);
+    fetchTutors();
   }, []);
+
+  const fetchTutors = async () => {
+    try {
+      const tutorsData = await tutorsAPI.getAllTutors();
+      // Add additional properties for the Tutors page
+      const enhancedTutors = tutorsData.map(tutor => ({
+        ...tutor,
+        location: getLocationForTutor(tutor.id),
+        experience: getExperienceForTutor(tutor.id),
+        description: getDescriptionForTutor(tutor.id)
+      }));
+      setTutors(enhancedTutors);
+    } catch (error) {
+      console.error('Error fetching tutors:', error);
+    }
+  };
+
+  const getLocationForTutor = (id) => {
+    const locations = {
+      1: "Rishikesh, Uttarakhand",
+      2: "Haridwar, Uttarakhand",
+      3: "Kedarnath, Uttarakhand",
+      4: "Badrinath, Uttarakhand",
+      5: "Gangotri, Uttarakhand",
+      6: "Yamunotri, Uttarakhand"
+    };
+    return locations[id] || "Uttarakhand";
+  };
+
+  const getExperienceForTutor = (id) => {
+    const experiences = {
+      1: "8 years",
+      2: "6 years",
+      3: "10 years",
+      4: "5 years",
+      5: "7 years",
+      6: "9 years"
+    };
+    return experiences[id] || "5 years";
+  };
+
+  const getDescriptionForTutor = (id) => {
+    const descriptions = {
+      1: "Expert in spiritual tourism and adventure activities. Certified yoga instructor with deep knowledge of local temples and ashrams.",
+      2: "Passionate about showcasing local culture and traditions. Professional photographer who captures the essence of spiritual India.",
+      3: "Mountain guide with extensive experience in high-altitude trekking and pilgrimage routes. Safety certified and first-aid trained.",
+      4: "Local artisan and temple guide with deep knowledge of Ayurvedic practices and traditional crafts of the region.",
+      5: "Wildlife expert and nature photographer specializing in Himalayan flora and fauna with extensive field experience.",
+      6: "Certified yoga instructor and meditation teacher with deep understanding of ancient spiritual practices and Sanskrit texts."
+    };
+    return descriptions[id] || "Experienced local guide with extensive knowledge of the region.";
+  };
 
   const filteredTutors = tutors.filter(tutor => {
     const matchesSearch = tutor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
