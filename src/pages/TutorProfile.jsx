@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { createCashfreeOrder } from '../utils/cashfree';
 
 export default function TutorProfile() {
   const { id } = useParams();
@@ -10,6 +11,9 @@ export default function TutorProfile() {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
   const [reviews, setReviews] = useState([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentData, setPaymentData] = useState({ days: 1, totalAmount: 0 });
+
 
   useEffect(() => {
     // Mock tutor data based on ID
@@ -76,6 +80,88 @@ export default function TutorProfile() {
       setLoading(false);
     }, 500);
   }, [id]);
+
+  const handlePayment = async () => {
+    if (!user) {
+      alert('Please login to make payment');
+      return;
+    }
+
+    try {
+      // Create order data
+      const orderData = {
+        order_id: 'tutor_booking_' + Date.now(),
+        order_amount: paymentData.totalAmount,
+        order_currency: 'INR',
+        customer_details: {
+          customer_id: user.id || 'customer_' + Date.now(),
+          customer_name: user.name,
+          customer_email: user.email || 'user@example.com',
+          customer_phone: '9999999999'
+        },
+        order_meta: {
+          return_url: window.location.origin + '/payment-success',
+          tutor_id: tutor.id,
+          tutor_name: tutor.name,
+          booking_days: paymentData.days
+        }
+      };
+
+      // Create order (in production, this calls your backend)
+      const orderResponse = await createCashfreeOrder(orderData);
+      
+      if (!orderResponse.payment_session_id) {
+        throw new Error('Failed to create payment session');
+      }
+
+      // Check if Cashfree SDK is loaded
+      if (typeof window.Cashfree === 'undefined') {
+        throw new Error('Cashfree SDK not loaded');
+      }
+
+      // Initialize Cashfree
+      const cashfree = window.Cashfree({
+        mode: 'sandbox' // Change to 'production' for live
+      });
+
+      const checkoutOptions = {
+        paymentSessionId: orderResponse.payment_session_id,
+        redirectTarget: '_modal'
+      };
+
+      // Open Cashfree checkout
+      const result = await cashfree.checkout(checkoutOptions);
+      
+      if (result.error) {
+        console.error('Payment failed:', result.error);
+        alert('Payment failed: ' + result.error.message);
+        return;
+      }
+
+      if (result.paymentDetails) {
+        console.log('Payment successful:', result.paymentDetails);
+        alert(`Payment successful! Booking confirmed for ${paymentData.days} day(s) with ${tutor.name}`);
+        setShowPayment(false);
+      }
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Payment failed: ' + error.message);
+    }
+  };
+
+  const openPaymentModal = () => {
+    if (!user) {
+      alert('Please login to book a tutor');
+      return;
+    }
+    setPaymentData({ days: 1, totalAmount: tutor.price });
+    setShowPayment(true);
+  };
+
+  const updatePaymentAmount = (days) => {
+    setPaymentData({ days, totalAmount: tutor.price * days });
+  };
 
   if (loading) {
     return (
@@ -339,14 +425,94 @@ export default function TutorProfile() {
             {/* Book Now */}
             <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-xl shadow-lg p-6 text-white">
               <h3 className="text-xl font-bold mb-4">Ready to Book?</h3>
-              <p className="mb-4">Contact {tutor.name} to plan your perfect trip!</p>
-              <button className="w-full bg-white text-orange-600 py-3 px-6 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                Contact Now
-              </button>
+              <p className="mb-4">Book {tutor.name} for your perfect trip!</p>
+              <div className="space-y-3">
+                <button 
+                  onClick={openPaymentModal}
+                  className="w-full bg-white text-orange-600 py-3 px-6 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                >
+                  Book Now - ₹{tutor.price}/day
+                </button>
+                <button className="w-full border-2 border-white text-white py-2 px-6 rounded-lg font-medium hover:bg-white hover:text-orange-600 transition-colors">
+                  Contact First
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold">Book {tutor.name}</h3>
+              <button 
+                onClick={() => setShowPayment(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Number of Days</label>
+                <select 
+                  value={paymentData.days}
+                  onChange={(e) => updatePaymentAmount(parseInt(e.target.value))}
+                  className="w-full p-3 border rounded-lg"
+                >
+                  {[1,2,3,4,5,6,7,8,9,10].map(day => (
+                    <option key={day} value={day}>{day} day{day > 1 ? 's' : ''}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span>Rate per day:</span>
+                  <span>₹{tutor.price}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span>Days:</span>
+                  <span>{paymentData.days}</span>
+                </div>
+                <div className="border-t pt-2">
+                  <div className="flex justify-between items-center font-bold text-lg">
+                    <span>Total Amount:</span>
+                    <span>₹{paymentData.totalAmount}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                <p>• Secure payment powered by Cashfree</p>
+                <p>• 100% refund if cancelled 24hrs before</p>
+                <p>• Direct contact with tutor after booking</p>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button 
+                  onClick={() => setShowPayment(false)}
+                  className="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handlePayment}
+                  className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                >
+                  Pay ₹{paymentData.totalAmount}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

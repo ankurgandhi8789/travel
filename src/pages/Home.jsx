@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api from '../utils/api.js';
+import { Link, useNavigate } from 'react-router-dom';
+import { placesAPI } from '../utils/api.js';
 
 export default function Home() {
   const [places, setPlaces] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPlaces();
@@ -13,12 +14,28 @@ export default function Home() {
 
   const fetchPlaces = async () => {
     try {
-      const response = await api.get('/api/places');
-      setPlaces(response.data);
+      const placesData = await placesAPI.getPopularPlaces();
+      setPlaces(placesData);
     } catch (error) {
       console.error('Error fetching places:', error);
+      const fallbackPlaces = placesAPI.getFallbackPlaces();
+      setPlaces(fallbackPlaces);
     }
     setLoading(false);
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
+    } else {
+      navigate('/explore');
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const filteredPlaces = places.filter(place =>
@@ -56,8 +73,12 @@ export default function Home() {
                 className="w-full p-4 pr-12 text-gray-800 rounded-full text-lg shadow-2xl border-2 border-white/20"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
-              <button className="absolute right-2 top-2 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
+              <button 
+                onClick={handleSearch}
+                className="absolute right-2 top-2 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700"
+              >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>

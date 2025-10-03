@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api from '../utils/api.js';
+import { Link, useSearchParams } from 'react-router-dom';
+import { placesAPI } from '../utils/api.js';
 
 export default function Explore() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [places, setPlaces] = useState([]);
+  const [filteredPlaces, setFilteredPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -12,25 +14,52 @@ export default function Explore() {
     fetchPlaces();
   }, []);
 
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    filterPlaces();
+  }, [searchQuery, selectedCategory, places]);
+
   const fetchPlaces = async () => {
     try {
-      const response = await api.get('/api/places');
-      setPlaces(response.data);
+      const placesData = await placesAPI.getPopularPlaces();
+      setPlaces(placesData);
+      setFilteredPlaces(placesData);
     } catch (error) {
       console.error('Error fetching places:', error);
+      const fallbackPlaces = placesAPI.getFallbackPlaces();
+      setPlaces(fallbackPlaces);
+      setFilteredPlaces(fallbackPlaces);
     }
     setLoading(false);
   };
 
-  const filteredPlaces = places.filter(place => {
-    const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         place.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || 
-                           (selectedCategory === 'temples' && place.name.toLowerCase().includes('temple')) ||
-                           (selectedCategory === 'ashrams' && place.name.toLowerCase().includes('ashram')) ||
-                           (selectedCategory === 'ghats' && place.name.toLowerCase().includes('ghat'));
-    return matchesSearch && matchesCategory;
-  });
+  const filterPlaces = () => {
+    let filtered = places;
+    
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(place => 
+        place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        place.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        place.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(place => place.category === selectedCategory);
+    }
+    
+    setFilteredPlaces(filtered);
+  };
+
+
 
   if (loading) {
     return (
@@ -45,8 +74,8 @@ export default function Explore() {
       {/* Header */}
       <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-12">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-4">Explore Sacred Destinations</h1>
-          <p className="text-xl">Discover spiritual places and pilgrimage sites in Uttarakhand</p>
+          <h1 className="text-4xl font-bold mb-4">Explore World Destinations</h1>
+          <p className="text-xl">Discover amazing places around the world</p>
         </div>
       </section>
 
@@ -67,9 +96,10 @@ export default function Explore() {
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
               <option value="all">All Categories</option>
-              <option value="temples">Temples</option>
-              <option value="ashrams">Ashrams</option>
-              <option value="ghats">Ghats</option>
+              <option value="cultural">Cultural</option>
+              <option value="adventure">Adventure</option>
+              <option value="historical">Historical</option>
+              <option value="nature">Nature</option>
             </select>
           </div>
         </div>
@@ -97,7 +127,14 @@ export default function Explore() {
                     <span className="text-sm text-gray-500">{place.location}</span>
                   </div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">{place.duration}</span>
+                    <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">{place.category}</span>
+                    <div className="flex items-center">
+                      <span className="text-yellow-500 mr-1">★</span>
+                      <span className="text-sm text-gray-600">{place.rating}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-600">{place.duration}</span>
                     <div className="text-right">
                       <span className="text-lg font-bold text-green-600">₹{place.discountedPrice}</span>
                       <span className="text-sm text-gray-500 line-through ml-1">₹{place.price}</span>

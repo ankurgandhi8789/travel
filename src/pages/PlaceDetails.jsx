@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../utils/api.js';
+import { placesAPI } from '../utils/api.js';
 
 const vehicles = [
   { id: 1, name: "Tempo Traveller", type: "Bus", capacity: "12 seater", price: 2500, image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=60" },
@@ -31,10 +31,19 @@ export default function PlaceDetails() {
 
   const fetchPlace = async () => {
     try {
-      const response = await api.get(`/api/places/${id}`);
-      setPlace(response.data);
+      const places = await placesAPI.getPopularPlaces();
+      const foundPlace = places.find(p => p._id === id);
+      if (foundPlace) {
+        setPlace(foundPlace);
+      } else {
+        // Fallback to a default place if not found
+        const fallbackPlaces = placesAPI.getFallbackPlaces();
+        setPlace(fallbackPlaces.find(p => p._id === id) || fallbackPlaces[0]);
+      }
     } catch (error) {
       console.error('Error fetching place:', error);
+      const fallbackPlaces = placesAPI.getFallbackPlaces();
+      setPlace(fallbackPlaces[0]);
     }
     setLoading(false);
   };
