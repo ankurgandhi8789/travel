@@ -18,10 +18,21 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    // Mock login for demo purposes
+    // Check if user exists in localStorage from registration
+    const existingUser = localStorage.getItem('registeredUser');
+    if (existingUser) {
+      const userData = JSON.parse(existingUser);
+      if (userData.email === email) {
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        return userData;
+      }
+    }
+    
+    // Default mock user if no registered user found
     const mockUser = {
       id: 1,
-      name: 'Demo User',
+      name: email.split('@')[0],
       email: email,
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
     };
@@ -31,16 +42,19 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (userData) => {
-    // Mock registration for demo purposes
-    const mockUser = {
+    // Create user with registration data
+    const newUser = {
       id: Date.now(),
       name: userData.name,
       email: userData.email,
+      location: userData.location,
+      bio: userData.bio,
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
     };
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setUser(mockUser);
-    return mockUser;
+    localStorage.setItem('registeredUser', JSON.stringify(newUser));
+    localStorage.setItem('user', JSON.stringify(newUser));
+    setUser(newUser);
+    return newUser;
   };
 
   const logout = () => {

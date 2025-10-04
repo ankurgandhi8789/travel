@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { placesAPI } from '../utils/api.js';
+import { usePosts } from '../context/PostsContext';
 
 export default function Explore() {
+  const { getAllActivePosts } = usePosts();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [places, setPlaces] = useState([]);
@@ -28,12 +30,51 @@ export default function Explore() {
   const fetchPlaces = async () => {
     try {
       const placesData = await placesAPI.getPopularPlaces();
-      setPlaces(placesData);
-      setFilteredPlaces(placesData);
+      const userPosts = getAllActivePosts();
+      
+      // Convert user posts to places format
+      const convertedPosts = userPosts.map(post => ({
+        _id: `post-${post.id}`,
+        name: post.title,
+        description: post.description,
+        location: post.location,
+        category: post.type,
+        image: post.image || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400',
+        rating: post.rating || 0,
+        duration: post.duration,
+        price: post.price,
+        difficulty: post.difficulty,
+        groupSize: post.groupSize,
+        highlights: post.highlights,
+        authorName: post.authorName,
+        isUserPost: true
+      }));
+      
+      const allPlaces = [...convertedPosts, ...placesData];
+      setPlaces(allPlaces);
+      setFilteredPlaces(allPlaces);
     } catch (error) {
       console.error('Error fetching places:', error);
-      setPlaces([]);
-      setFilteredPlaces([]);
+      // Still show user posts even if API fails
+      const userPosts = getAllActivePosts();
+      const convertedPosts = userPosts.map(post => ({
+        _id: `post-${post.id}`,
+        name: post.title,
+        description: post.description,
+        location: post.location,
+        category: post.type,
+        image: post.image || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400',
+        rating: post.rating || 0,
+        duration: post.duration,
+        price: post.price,
+        difficulty: post.difficulty,
+        groupSize: post.groupSize,
+        highlights: post.highlights,
+        authorName: post.authorName,
+        isUserPost: true
+      }));
+      setPlaces(convertedPosts);
+      setFilteredPlaces(convertedPosts);
     }
     setLoading(false);
   };
@@ -112,6 +153,11 @@ export default function Explore() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredPlaces.map(place => (
               <div key={place._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300">
+                {place.isUserPost && (
+                  <div className="bg-green-100 text-green-800 text-xs px-3 py-1 font-medium">
+                    🌟 User Created
+                  </div>
+                )}
                 <img 
                   src={place.image} 
                   alt={place.name}
@@ -130,13 +176,20 @@ export default function Explore() {
                     <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">{place.category}</span>
                     <div className="flex items-center">
                       <span className="text-yellow-500 mr-1">★</span>
-                      <span className="text-sm text-gray-600">{place.rating}</span>
+                      <span className="text-sm text-gray-600">{place.rating || 'New'}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-gray-600">{place.duration}</span>
-                    
+                    {place.price && (
+                      <span className="text-sm font-semibold text-green-600">{place.price}</span>
+                    )}
                   </div>
+                  {place.isUserPost && place.authorName && (
+                    <div className="text-xs text-gray-500 mb-3">
+                      By: {place.authorName}
+                    </div>
+                  )}
                   <Link 
                     to={`/place/${place._id}`} 
                     className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 text-center block text-sm font-medium transition-colors"

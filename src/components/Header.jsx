@@ -22,6 +22,8 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-gray-700 hover:text-orange-500 font-medium transition-colors">Home</Link>
             <Link to="/explore" className="text-gray-700 hover:text-orange-500 font-medium transition-colors">Destinations</Link>
+            
+            <Link to="/contact" className="text-gray-700 hover:text-orange-500 font-medium transition-colors">Contact</Link>
             {user ? (
               <>
                 <Link to="/profile" className="text-gray-700 hover:text-orange-500 font-medium transition-colors">Profile</Link>
